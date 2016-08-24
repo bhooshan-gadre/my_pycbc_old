@@ -1,0 +1,1 @@
+https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git
