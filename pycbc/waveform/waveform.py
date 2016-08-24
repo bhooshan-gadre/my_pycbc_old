@@ -62,6 +62,18 @@ def _lalsim_td_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
+    ###########
+    def rulog2(val):
+        return 2.0 ** numpy.ceil(numpy.log2(float(val)))
+
+    f_final = rulog2(seobnrrom_final_frequency(**p))
+    f_nyq = 0.5/p['delta_t']
+    if f_final > f_nyq:
+        print 'Final frequecny {0} is greater than given nyquist frequecny {1}'.format(f_final, f_nyq)
+        p['delta_t'] = 0.5/f_final
+
+    ##########
+
     if p['numrel_data']:
         lalsimulation.SimInspiralSetNumrelData(flags, str(p['numrel_data']))
 
@@ -105,7 +117,7 @@ def _lalsim_fd_waveform(**p):
                             epoch=hp1.epoch)
 
     hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
-                            epoch=hc1.epoch)                        
+                            epoch=hc1.epoch)
 
     return hp, hc
 
@@ -185,13 +197,13 @@ def print_sgburst_approximants():
         print "  " + approx
 
 def td_approximants(scheme=_scheme.mgr.state):
-    """Return a list containing the available time domain approximants for 
+    """Return a list containing the available time domain approximants for
        the given processing scheme.
     """
     return td_wav[type(scheme)].keys()
 
 def fd_approximants(scheme=_scheme.mgr.state):
-    """Return a list containing the available fourier domain approximants for 
+    """Return a list containing the available fourier domain approximants for
        the given processing scheme.
     """
     return fd_wav[type(scheme)].keys()
@@ -262,22 +274,22 @@ def props_sgburst(obj, **kwargs):
 # Waveform generation ########################################################
 
 def get_td_waveform(template=None, **kwargs):
-    """Return the plus and cross polarizations of a time domain waveform. 
+    """Return the plus and cross polarizations of a time domain waveform.
 
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to subsitute
-        for keyword arguments. A common example would be a row in an xml table. 
+        for keyword arguments. A common example would be a row in an xml table.
     approximant : string
-        A string that indicates the chosen approximant. See `td_approximants` 
-        for available options. 
+        A string that indicates the chosen approximant. See `td_approximants`
+        for available options.
     mass1 : float
         The mass of the first component object in the binary in solar masses.
-    mass2 : 
+    mass2 :
         The mass of the second component object in the binary in solar masses.
     delta_t :
-        The time step used to generate the waveform. 
+        The time step used to generate the waveform.
     f_lower :
         The starting frequency of the waveform.
     f_ref : {float}, optional
@@ -285,10 +297,10 @@ def get_td_waveform(template=None, **kwargs):
     distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
-        The inclination angle of the source. 
+        The inclination angle of the source.
     coa_phase : {0, float}, optional
         The final phase or phase at the peak of the wavform. See documentation
-        on specific approximants for exact usage. 
+        on specific approximants for exact usage.
     spin1x : {0, float}, optional
         The x component of the first binary component's spin vector.
     spin1y : {0, float}, optional
@@ -306,16 +318,16 @@ def get_td_waveform(template=None, **kwargs):
     lambda2: {0, float}, optional
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
-        The pN order of the orbital phase. The default of -1 indicates that 
+        The pN order of the orbital phase. The default of -1 indicates that
         all implemented orders are used.
     spin_order: {-1, int}, optional
-        The pN order of the spin corrections. The default of -1 indicates that 
+        The pN order of the spin corrections. The default of -1 indicates that
         all implemented orders are used.
     tidal_order: {-1, int}, optional
-        The pN order of the tidal corrections. The default of -1 indicates that 
+        The pN order of the tidal corrections. The default of -1 indicates that
         all implemented orders are used.
     amplitude_order: {-1, int}, optional
-        The pN order of the amplitude. The default of -1 indicates that 
+        The pN order of the amplitude. The default of -1 indicates that
         all implemented orders are used.
 
     Returns
@@ -349,30 +361,30 @@ def get_fd_waveform(template=None, **kwargs):
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table. 
+        for keyword arguments. A common example would be a row in an xml table.
     approximant : string
-        A string that indicates the chosen approximant. See `fd_approximants` 
-        for available options. 
+        A string that indicates the chosen approximant. See `fd_approximants`
+        for available options.
     mass1 : float
         The mass of the first component object in the binary in solar masses.
     mass2 : float
         The mass of the second component object in the binary in solar masses.
     delta_f : float
-        The frequency step used to generate the waveform. 
+        The frequency step used to generate the waveform.
     f_lower : float
         The starting frequency of the waveform.
     f_final : {-1, float}, optional
         The ending frequency of the waveform. The default indicates that the
-        choice is made by the respective approximant. 
+        choice is made by the respective approximant.
     f_ref : {float}, optional
         The reference frequency.
     distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
-        The inclination angle of the source. 
+        The inclination angle of the source.
     coa_phase : {0, float}, optional
         The final phase or phase at the peak of the waveform. See documentation
-        on specific approximants for exact usage. 
+        on specific approximants for exact usage.
     spin1x : {0, float}, optional
         The x component of the first binary component's spin vector.
     spin1y : {0, float}, optional
@@ -390,16 +402,16 @@ def get_fd_waveform(template=None, **kwargs):
     lambda2: {0, float}, optional
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
-        The pN order of the orbital phase. The default of -1 indicates that 
+        The pN order of the orbital phase. The default of -1 indicates that
         all implemented orders are used.
     spin_order: {-1, int}, optional
-        The pN order of the spin corrections. The default of -1 indicates that 
+        The pN order of the spin corrections. The default of -1 indicates that
         all implemented orders are used.
     tidal_order: {-1, int}, optional
-        The pN order of the tidal corrections. The default of -1 indicates that 
+        The pN order of the tidal corrections. The default of -1 indicates that
         all implemented orders are used.
     amplitude_order: {-1, int}, optional
-        The pN order of the amplitude. The default of -1 indicates that 
+        The pN order of the amplitude. The default of -1 indicates that
         all implemented orders are used.
 
     Returns
@@ -438,7 +450,7 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
     orig_approx = params['approximant']
     params['approximant'] = params['approximant'].replace('_INTERP', '')
     df = params['delta_f']
-    
+
     if 'duration' not in params:
         duration = get_waveform_filter_length_in_time(**params)
     elif params['duration'] > 0:
@@ -446,11 +458,11 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
     else:
         err_msg = "Waveform duration must be greater than 0."
         raise ValueError(err_msg)
-    
+
     #FIXME We should try to get this length directly somehow
     # I think this number should be conservative
     ringdown_padding = 0.5
-    
+
     df_min = 1.0 / rulog2(duration + ringdown_padding)
     # FIXME: I don't understand this, but waveforms with df_min < 0.5 will chop
     #        off the inspiral when using ringdown_padding - 0.5.
@@ -556,7 +568,7 @@ from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa
 def seobnrrom_final_frequency(**kwds):
     from pycbc.pnutils import get_final_freq
     return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
-    
+
 def seobnrrom_length_in_time(**kwds):
     """
     This is a stub for holding the calculation for getting length of the ROM
@@ -602,7 +614,7 @@ _filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
 for apx in copy.copy(_filter_time_lengths):
     apx_int = apx + '_INTERP'
     cpu_fd[apx_int] = get_interpolated_fd_waveform
-    _filter_time_lengths[apx_int] = _filter_time_lengths[apx]  
+    _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
@@ -628,15 +640,15 @@ def get_waveform_filter(out, template=None, **kwargs):
 
     if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
-        
+
         duration = get_waveform_filter_length_in_time(**input_params)
         hp, hc = wav_gen[input_params['approximant']](duration=duration,
                                                return_hc=False, **input_params)
-     
+
         hp.resize(n)
         out[0:len(hp)] = hp[:]
         hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
-        
+
         hp.length_in_time = hp.chirp_length = duration
         return hp
 
@@ -715,7 +727,7 @@ def waveform_norm_exists(approximant):
 def get_template_amplitude_norm(template=None, **kwargs):
     """ Return additional constant template normalization. This only affects
         the effective distance calculation. Returns None for all templates with a
-        physically meaningful amplitude. 
+        physically meaningful amplitude.
     """
     input_params = props(template,**kwargs)
     approximant = kwargs['approximant']
@@ -734,7 +746,7 @@ def get_waveform_filter_precondition(approximant, length, delta_f):
         return None
 
 def get_waveform_filter_norm(approximant, psd, length, delta_f, f_lower):
-    """ Return the normalization vector for the approximant 
+    """ Return the normalization vector for the approximant
     """
     if approximant in _filter_norms:
         return _filter_norms[approximant](psd, length, delta_f, f_lower)
