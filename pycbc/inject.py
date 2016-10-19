@@ -59,7 +59,7 @@ def legacy_approximant_name(apx):
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order
-    
+
 
 class InjectionSet(object):
     """Manages sets of injections: reads injections from LIGOLW XML files
@@ -110,8 +110,8 @@ class InjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
 
@@ -129,7 +129,7 @@ class InjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -186,8 +186,8 @@ class InjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -223,17 +223,17 @@ class InjectionSet(object):
                              inj.longitude, inj.latitude, inj.polarization)
 
         return signal
-        
-        
+
+
     def end_times(self):
         """ Return the end times of all injections
         """
-        return [inj.get_time_geocent() for inj in self.table]      
-        
-        
+        return [inj.get_time_geocent() for inj in self.table]
+
+
     def maximum_snrs(self, psd):
         """ Calculate the maximum SNR (without noise), for each signal in the
-        injection set, using the given PSD.        
+        injection set, using the given PSD.
 
         Parameters
         ----------
@@ -245,10 +245,10 @@ class InjectionSet(object):
 
         """
         raise NotImplementedError("This is not yet implemented")
-        
+
     def expected_snrs(self, template, psd):
         """ Calculate the expected SNR (without noise), for each signal in the
-        injection set, using the given PSD, when matched with the given template.       
+        injection set, using the given PSD, when matched with the given template.
 
         Parameters
         ----------
@@ -260,8 +260,8 @@ class InjectionSet(object):
 
         """
         raise NotImplementedError("This is not yet implemented")
-    
-    
+
+
 class SGBurstInjectionSet(object):
     """Manages sets of sine-Gaussian burst injections: reads injections
     from LIGOLW XML files and injects them into time series.

@@ -35,7 +35,7 @@ from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc import psd
 from pycbc.waveform import utils as wfutils
-from pycbc.filter import interpolate_complex_frequency
+from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 
 default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
@@ -92,6 +92,11 @@ def _lalsim_td_waveform(**p):
 
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
+    if f_final > f_nyq:
+        p['delta_t'] = 0.5/f_nyq
+        print "Need to resample at delta_t {0}".format(p['delta_t'])
+        hp = resample_to_delta_t(hp, p['delta_t'])
+        hc = resample_to_delta_t(hc, p['delta_t'])
 
     return hp, hc
 
