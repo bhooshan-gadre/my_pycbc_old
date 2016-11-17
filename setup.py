@@ -62,14 +62,14 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'mpld3>=0.3git',
+                      'pycbc-mpld3>=0.3.dev0',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue>=0.9.8',
+                      'pycbc-glue>=1.0.1',
                       'kombine',
                       'emcee>=2.2.0',
+                      'corner>=2.0.1',
                       #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
                       ]
-links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
 
 #FIXME Remove me when we bump to h5py > 2.5
 try:
@@ -261,7 +261,7 @@ def get_version_info():
             
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.6.dev0'
+        version = '1.6.0dev'
         release = 'False'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
@@ -353,7 +353,6 @@ setup (
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    dependency_links = links,
     scripts  = [
                'bin/minifollowups/pycbc_injection_minifollowup',
                'bin/minifollowups/pycbc_foreground_minifollowup',
@@ -392,8 +391,6 @@ setup (
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
                'bin/pycbc_randomize_inj_dist_by_optsnr',
-               'bin/hdfcoinc/pycbc_make_coinc_search_workflow',
-               'bin/hdfcoinc/pycbc_make_psd_estimation_workflow',
                'bin/hdfcoinc/pycbc_calculate_psd',
                'bin/hdfcoinc/pycbc_average_psd',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
@@ -459,6 +456,8 @@ setup (
                'bin/plotting/pycbc_plot_waveform',
                'bin/workflows/pycbc_create_sbank_workflow',
                'bin/workflows/pycbc_create_uberbank_workflow',
+               'bin/workflows/pycbc_make_coinc_search_workflow',
+               'bin/workflows/pycbc_make_psd_estimation_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
                ],

@@ -69,6 +69,7 @@ A simple workflow configuration file::
     likelihood-evaluator = gaussian
     nwalkers = 500
     niterations = 100000
+    save-psd =
 
     [pegasus_profile-inference]
     ; pegasus profile for inference nodes
@@ -139,8 +140,8 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     [prior-mass2]
     ; how to construct prior distribution
     name = uniform
-    min-mass1 = 10.
-    max-mass1 = 80.
+    min-mass2 = 10.
+    max-mass2 = 80.
 
     [prior-distance]
     ; how to construct prior distribution
@@ -171,7 +172,7 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
 
 A simple configuration file for parameter estimation on the ringdown is::
 
-    [variable-args]
+    [variable_args]
     ; parameters to vary in inference sampler
     tc =
     f_0 =
@@ -284,6 +285,8 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
                            inference:psd-end-time:$((${GPS_END_TIME}+1748))
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
+
+For the CBC example above define the environment variables ``GPS_END_TIME=1126259462`` and ``OUTPUT_MAP_PATH=output.map``. 
 
 =============================
 Plan and execute the workflow
