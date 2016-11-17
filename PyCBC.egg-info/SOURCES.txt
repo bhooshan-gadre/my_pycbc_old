@@ -51,8 +51,6 @@ bin/hdfcoinc/pycbc_fit_sngls_binned
 bin/hdfcoinc/pycbc_fit_sngls_by_template
 bin/hdfcoinc/pycbc_fit_sngls_over_param
 bin/hdfcoinc/pycbc_foreground_censor
-bin/hdfcoinc/pycbc_make_coinc_search_workflow
-bin/hdfcoinc/pycbc_make_psd_estimation_workflow
 bin/hdfcoinc/pycbc_merge_psds
 bin/hdfcoinc/pycbc_page_banktriggerrate
 bin/hdfcoinc/pycbc_page_coinc_snrchi
@@ -111,6 +109,8 @@ bin/pygrb/pycbc_make_grb_summary_page
 bin/pygrb/pycbc_make_offline_grb_workflow
 bin/workflows/pycbc_create_sbank_workflow
 bin/workflows/pycbc_create_uberbank_workflow
+bin/workflows/pycbc_make_coinc_search_workflow
+bin/workflows/pycbc_make_psd_estimation_workflow
 examples/overlap.py
 examples/banksim/injection0.xml
 examples/banksim/run.sh
@@ -326,15 +326,9 @@ pycbc/workflow/psdfiles.py
 pycbc/workflow/segment.py
 pycbc/workflow/splittable.py
 pycbc/workflow/tmpltbank.py
-pycbc/workflow/pegasus_files/comet-site-template.xml
 pycbc/workflow/pegasus_files/local-site-template.xml
-pycbc/workflow/pegasus_files/nebraska-site-template.xml
-pycbc/workflow/pegasus_files/orange-grid-site-template.xml
 pycbc/workflow/pegasus_files/osg-site-template.xml
 pycbc/workflow/pegasus_files/pegasus-properties.conf
-pycbc/workflow/pegasus_files/stampede-devel-site-template.xml
-pycbc/workflow/pegasus_files/stampede-site-template.xml
-pycbc/workflow/pegasus_files/stampede-transformation-catalog.txt
 test/autochisq_test.py
 test/bankvetotest.py
 test/test_array.py

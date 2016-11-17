@@ -156,11 +156,11 @@ pycbc.weave.insert_weave_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group(parser)
 
 opt = parser.parse_args()
-args_list = [p[0] for p in opt._get_kwargs()]
-with open('inpiral_param.txt', 'w+') as f:
-    f.write('\n'.join(args_list))
-
-print "Done"
+# args_list = [p[0] for p in opt._get_kwargs()]
+# with open('inpiral_param.txt', 'w+') as f:
+#     f.write('\n'.join(args_list))
+#
+# print "Done"
 
 # Check that the values returned for the options make sense
 psd.verify_psd_options(opt, parser)
@@ -178,8 +178,6 @@ ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
-
-print opt
 
 with ctx:
     fft.from_cli(opt)
