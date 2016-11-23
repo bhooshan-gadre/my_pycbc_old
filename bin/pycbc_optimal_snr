@@ -197,6 +197,7 @@ if __name__ == '__main__':
                 else:
                     raise
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
+            print sval
             setattr(inj, column, sval)
 
             if return_found:
@@ -216,7 +217,7 @@ if __name__ == '__main__':
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
-    # KLUDGE! Loop through the injections until we find one that 
+    # KLUDGE! Loop through the injections until we find one that
     # will be processed, in order to populate the weave cache.
     # This is a short-term fix until the issues with
     # https://github.com/ligo-cbc/pycbc/issues/501

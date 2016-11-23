@@ -54,20 +54,20 @@ def _convert_to_scheme(ary):
         converted_array = Array(ary, dtype=ary._data.dtype)
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
-      
-@decorator  
+
+@decorator
 def _convert(fn, self, *args):
     # Convert this array to the current processing scheme
     _convert_to_scheme(self)
     return fn(self, *args)
-    
+
 @decorator
 def _nocomplex(fn, self, *args):
     if self.kind == 'real':
         return fn(self, *args)
     else:
         raise TypeError( fn.__name__ + " does not support complex types")
-        
+
 @decorator
 def _noreal(fn, self, *args):
     if self.kind == 'complex':
@@ -92,11 +92,11 @@ def common_kind(*dtypes):
         if dtype.kind is 'c':
             return dtype
     return dtypes[0]
-   
-@schemed(BACKEND_PREFIX) 
+
+@schemed(BACKEND_PREFIX)
 def _to_device(array):
     """ Move input to device """
-    
+
 @schemed(BACKEND_PREFIX)
 def _copy_base_array(array):
     """ Copy a backend array"""
@@ -110,7 +110,7 @@ class Array(object):
     devices. It is a convience wrapper around numpy, and
     pycuda.
     """
-    
+
     __array_priority__ = 1000
 
     def __init__(self, initial_array, dtype=None, copy=True):
@@ -129,7 +129,7 @@ class Array(object):
         """
         self._scheme=_scheme.mgr.state
         self._saved = {}
-        
+
         #Unwrap initial_array
         if isinstance(initial_array, Array):
             initial_array = initial_array._data
@@ -138,7 +138,7 @@ class Array(object):
             if not _scheme_matches_base_array(initial_array):
                 raise TypeError("Cannot avoid a copy of this array")
             elif issubclass(type(self._scheme), _scheme.CPUScheme):
-                # ArrayWithAligned does not copy its memory; all 
+                # ArrayWithAligned does not copy its memory; all
                 # the following does is add the 'isaligned' flag
                 # in case initial_array was a true numpy array
                 self._data = ArrayWithAligned(initial_array)
@@ -159,12 +159,12 @@ class Array(object):
                 initial_array = _numpy.array(initial_array)
 
             # Determine the dtype to use
-            if dtype is not None:  
+            if dtype is not None:
                 dtype = _numpy.dtype(dtype)
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')
                 if dtype.kind != 'c' and initial_array.dtype.kind == 'c':
-                    raise TypeError(str(initial_array.dtype) + ' cannot be cast as ' + str(dtype))          
+                    raise TypeError(str(initial_array.dtype) + ' cannot be cast as ' + str(dtype))
             elif initial_array.dtype in _ALLOWED_DTYPES:
                 dtype = initial_array.dtype
             else:
@@ -172,35 +172,35 @@ class Array(object):
                     dtype = complex128
                 else:
                     dtype = float64
-                     
+
             # Cast to the final dtype if needed
             if initial_array.dtype != dtype:
                 initial_array = initial_array.astype(dtype)
-                                              
+
             #Create new instance with initial_array as initialization.
             if issubclass(type(self._scheme), _scheme.CPUScheme):
                 if hasattr(initial_array, 'get'):
                     self._data = ArrayWithAligned(_numpy.array(initial_array.get()))
                 else:
-                    self._data = ArrayWithAligned(_numpy.array(initial_array, 
+                    self._data = ArrayWithAligned(_numpy.array(initial_array,
                                                                dtype=dtype, ndmin=1))
             elif _scheme_matches_base_array(initial_array):
                 self._data = _copy_base_array(initial_array)
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
                 self._data = _to_device(initial_array)
-     
+
     @decorator
     def _memoize_single(fn, self, arg):
         badh = str(arg)
-        
+
         if badh in self._saved:
             return self._saved[badh]
 
         res = fn(self, arg)
-        self._saved[badh] = res      
+        self._saved[badh] = res
         return res
-                   
+
     @decorator
     def _returnarray(fn, self, *args):
         return Array(fn(self, *args), copy=False)
@@ -211,7 +211,7 @@ class Array(object):
         if ary is NotImplemented:
             return NotImplemented
         return self._return(ary)
-        
+
     def _return(self, ary):
         """Wrap the ary to return an Array type """
         if isinstance(ary, Array):
@@ -222,7 +222,7 @@ class Array(object):
     def _checkother(fn, self, *args):
         nargs = ()
         for other in args:
-            self._typecheck(other)  
+            self._typecheck(other)
             if type(other) in _ALLOWED_SCALARS:
                 other = force_precision_to_match(other, self.precision)
                 nargs +=(other,)
@@ -238,12 +238,12 @@ class Array(object):
                 return NotImplemented
 
         return fn(self, *nargs)
-    
-    @decorator  
+
+    @decorator
     def _vcheckother(fn, self, *args):
         nargs = ()
         for other in args:
-            self._typecheck(other)  
+            self._typecheck(other)
             if isinstance(other, type(self)) or type(other) is Array:
                 if len(other) != len(self):
                     raise ValueError('lengths do not match')
@@ -253,16 +253,17 @@ class Array(object):
                 else:
                     raise TypeError('precisions do not match')
             else:
-                raise TypeError('array argument required')                    
+                raise TypeError('array argument required')
 
         return fn(self,*nargs)
-        
-    @decorator  
+
+    @decorator
     def _vrcheckother(fn, self,*args):
         nargs = ()
         for other in args:
             if isinstance(other, type(self)) or type(other) is Array:
                 if len(other) != len(self):
+                    print 'self, other', len(self), len(other)
                     raise ValueError('lengths do not match')
                 if other.precision == self.precision:
                     _convert_to_scheme(other)
@@ -270,14 +271,14 @@ class Array(object):
                 else:
                     raise TypeError('precisions do not match')
             else:
-                raise TypeError('array argument required')                    
+                raise TypeError('array argument required')
 
         return fn(self, *nargs)
 
     @decorator
     def _icheckother(fn, self, other):
         """ Checks the input to in-place operations """
-        self._typecheck(other) 
+        self._typecheck(other)
 
         if type(other) in _ALLOWED_SCALARS:
             if self.kind == 'real' and type(other) == complex:
@@ -300,7 +301,7 @@ class Array(object):
 
     def _typecheck(self, other):
         """ Additional typechecking for other. Placeholder for use by derived
-        types. 
+        types.
         """
         pass
 
@@ -328,7 +329,7 @@ class Array(object):
         return self._data + other
 
     __radd__ = __add__
-       
+
     def fill(self, value):
         self._data.fill(value)
 
@@ -497,7 +498,7 @@ class Array(object):
 
         Returns
         -------
-        boolean 
+        boolean
             'True' if the data agree within the tolerance, as
             interpreted by the 'relative' keyword, and if the types,
             lengths, and dtypes are exactly the same.
@@ -551,7 +552,7 @@ class Array(object):
         other
             another Python object, that should be tested for
             almost-equality with 'self', based on their norms.
-        tol 
+        tol
             a non-negative number, the tolerance, which is interpreted
             as either a relative tolerance (the default) or an absolute
             tolerance.
@@ -608,7 +609,7 @@ class Array(object):
     def conj(self):
         """ Return complex conjugate of Array. """
         return self._data.conj()
-        
+
     @_returntype
     @_convert
     @schemed(BACKEND_PREFIX)
@@ -641,7 +642,7 @@ class Array(object):
 
     @_convert
     @schemed(BACKEND_PREFIX)
-    def clear(self): 
+    def clear(self):
         """ Clear out the values of the array. """
 
     @_vrcheckother
@@ -661,13 +662,13 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
-     
+
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
-            
+
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
@@ -688,20 +689,20 @@ class Array(object):
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
-        """ Return the maximum value in the array. """ 
-        
+        """ Return the maximum value in the array. """
+
     @_returnarray
     @_convert
     @schemed(BACKEND_PREFIX)
     def take(self, indices):
-        """ Return the values at the given indices. """                           
+        """ Return the values at the given indices. """
 
     @_convert
     @_vcheckother
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """ Return the dot product"""
-    
+
     @schemed(BACKEND_PREFIX)
     def _getvalue(self, index):
         """Helper function to return a single value from an array. May be very
@@ -713,13 +714,13 @@ class Array(object):
     def _getslice(self, index):
         if index.step is not None:
             raise ValueError("Step size not supported for slicing")
-        
+
         return self._return(self._data[index])
-    
+
     @_convert
     def __getitem__(self, index):
         """ Return items from the Array. This not guaranteed to be fast for
-            returning single values. 
+            returning single values.
         """
         if isinstance(index, slice):
             return self._getslice(index)
@@ -734,7 +735,7 @@ class Array(object):
             logging.warn("Requested size (%s) of array is less than "
                          "current size (%s). This will truncate "
                          "the array." % (new_size, len(self)))
-        
+
         if new_size == len(self):
             return
         else:
@@ -743,7 +744,7 @@ class Array(object):
                 new_arr[0:len(self)] = self
             else:
                 new_arr[:] = self[0:new_size]
-                
+
             self._data = new_arr._data
 
     @_convert
@@ -760,7 +761,7 @@ class Array(object):
 
         new_arr[0:shift] = self[len(self)-shift: len(self)]
         new_arr[shift:len(self)] = self[0:len(self)-shift]
-            
+
         self._data = new_arr._data
 
     @_returntype
@@ -770,13 +771,13 @@ class Array(object):
             return self
         else:
             return self._data.astype(dtype)
-    
+
     @schemed(BACKEND_PREFIX)
     def _copy(self, self_ref, other_ref):
         """Helper function to copy between two arrays. The arrays references
-           should be bare array types and not `Array` class instances. 
+           should be bare array types and not `Array` class instances.
         """
-                
+
     @_convert
     def __setitem__(self, index, other):
         if isinstance(other,Array):
@@ -785,7 +786,7 @@ class Array(object):
             if self.kind is 'real' and other.kind is 'complex':
                 raise ValueError('Cannot set real value with complex')
 
-            if isinstance(index,slice):          
+            if isinstance(index,slice):
                 self_ref = self._data[index]
                 other_ref = other._data
             else:
@@ -807,8 +808,8 @@ class Array(object):
         if self.dtype == float32 or self.dtype == complex64:
             return 'single'
         else:
-            return 'double'        
-                
+            return 'double'
+
     @property
     def kind(self):
         if self.dtype == float32 or self.dtype == float64:
@@ -837,11 +838,11 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def ptr(self):
         """ Returns a pointer to the memory of this array """
-        
+
     @property
     def itemsize(self):
         return self.dtype.itemsize
-    
+
     @property
     def nbytes(self):
         return len(self.data) * self.itemsize
@@ -850,16 +851,16 @@ class Array(object):
     @cpuonly
     @_convert
     def _swighelper(self):
-        """ Used internally by SWIG typemaps to ensure @_convert 
-            is called and scheme is correct  
+        """ Used internally by SWIG typemaps to ensure @_convert
+            is called and scheme is correct
         """
         return self;
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def numpy(self):
-        """ Returns a Numpy Array that contains this data """     
-    
+        """ Returns a Numpy Array that contains this data """
+
     @_convert
     def lal(self):
         """ Returns a LAL Object that contains this data """
@@ -881,7 +882,7 @@ class Array(object):
     @property
     def dtype(self):
         return self._data.dtype
-    
+
     def save(self, path, group=None):
         """
         Save array to a Numpy .npy, hdf, or text file. When saving a complex array as
@@ -893,8 +894,8 @@ class Array(object):
         ----------
         path: string
             Destination file path. Must end with either .hdf, .npy or .txt.
-            
-        group: string 
+
+        group: string
             Additional name for internal storage use. Ex. hdf storage uses
             this as the key value.
 
@@ -921,11 +922,11 @@ class Array(object):
                                   compression_opts=9, shuffle=True)
         else:
             raise ValueError('Path must end with .npy, .txt, or .hdf')
-           
-    @_convert 
+
+    @_convert
     def trim_zeros(self):
         """Remove the leading and trailing zeros.
-        """      
+        """
         tmp = self.numpy()
         f = len(self)-len(_numpy.trim_zeros(tmp, trim='f'))
         b = len(self)-len(_numpy.trim_zeros(tmp, trim='b'))
@@ -945,7 +946,7 @@ class Array(object):
             The new dtype that should be used to interpret the bytes of self
         """
         return self._data.view(dtype)
-            
+
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
     if data.precision is 'single':
@@ -980,7 +981,7 @@ def load_array(path, group=None):
     path : string
         source file path. Must end with either .npy or .txt.
 
-    group: string 
+    group: string
         Additional name for internal storage use. Ex. hdf storage uses
         this as the key value.
 
@@ -991,15 +992,15 @@ def load_array(path, group=None):
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = _numpy.load(path)    
+        data = _numpy.load(path)
     elif ext == '.txt':
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        return Array(h5py.File(path)[key]) 
+        return Array(h5py.File(path)[key])
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
-        
+
     if data.ndim == 1:
         return Array(data)
     elif data.ndim == 2:
@@ -1007,5 +1008,5 @@ def load_array(path, group=None):
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \
                           must be 1 (real) or 2 (complex)' % data.ndim)
-    
+
 
