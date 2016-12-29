@@ -1,12 +1,10 @@
-
-# coding: utf-8
-
-# In[13]:
+#!/usr/bin/env python
 
 import lal
 from pycbc.waveform import TemplateBank
 import pycbc.waveform as pw
 import pycbc.filter as pf
+import pycbc.types as pt
 
 import pycbc.psd as pp
 import pycbc.pnutils as pnu
@@ -68,10 +66,13 @@ def temp_param_from_central_param(central_param, newtau0, newtau3, f_ref):
     temp_param['mass2'] = m2
     temp_param['tau0'] = newtau0
     temp_param['tau3'] = newtau3
+    temp_param['approximant'] = 'TaylorF2RedSpin'
     return temp_param
 
 def get_chirp_time_region(trigger_params, psd, miss_match, f_lower=30., f_max=2048., f_ref=30.):
     central_param = copy.deepcopy(trigger_params)
+    # if central_param['approximant'] == 'SPAtmplt':
+    central_param['approximant'] == 'TaylorF2RedSpin'
     # if not ('tau0' and 'tau3' in central_param):
     #     t0, t3 = pnu.mass1_mass2_to_tau0_tau3(central_param['mass1'], central_param['mass2'], f_ref)
     # else:
@@ -87,21 +88,40 @@ def get_chirp_time_region(trigger_params, psd, miss_match, f_lower=30., f_max=20
 
     tlen = pnu.nearest_larger_binary_number(max([central_param['tau0'], temp_param0['tau0'], temp_param3['tau0']]))
     df = 1.0/tlen
+    flen = int(f_max/df) + 1
+
+    # hp = pt.zeros(flen, dtype=pt.complex64)
+    # hp0 = pt.zeros(flen, dtype=pt.complex64)
+    # hp3 = pt.zeros(flen, dtype=pt.complex64)
+
+    # print central_param['approximant']
+
+    # if central_param['approximant'] == 'SPAtmplt':
+    #     central_param['approximant'] == 'TaylorF2RedSpin'
+        # hp = pw.get_waveform_filter(hp, central_param, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+        # hp0 = pw.get_waveform_filter(hp0, temp_param0, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+        # hp3 = pw.get_waveform_filter(hp3, temp_param3, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+    # else:
+    hp, hc = pw.get_fd_waveform(central_param, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+    hp0, hc0 = pw.get_fd_waveform(temp_param0, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+    hp3, hc3 = pw.get_fd_waveform(temp_param3, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
+
 
     # FIXME: currently will using aLIGOZeroDetHighPower
     # FIXME: add how to make sure, psd numerical problems of psd
     if psd is not None:
         ipsd = pp.interpolate(psd, df)
     else:
-        ipsd = psd
+        ipsd = None
+        # ipsd = pp.aLIGOZeroDetHighPower(flen, df, f_lower)
+        # ipsd = pp.interpolate(ipsd, df)
+        # ipsd.data[-1] = 2.0*ipsd.data[-2]
+        # ipsd = ipsd.astype(hp.dtype)
 
-    hp, hc = pw.get_fd_waveform(central_param, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
-    hp0, hc0 = pw.get_fd_waveform(temp_param0, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
-    hp3, hc3 = pw.get_fd_waveform(temp_param3, delta_f=df, f_lower=f_lower, f_ref=f_ref, f_final=f_max)
 
     mat0, _ = pf.match(hp, hp0, ipsd, f_lower, f_max)
     mat3, _ = pf.match(hp, hp3, ipsd, f_lower, f_max)
-#     print mat0, mat3, miss_match
+    # print mat0, mat3, miss_match
 #     print central_param['tau0'], central_param['tau3']
 #     print temp_param0['tau0'], temp_param0['tau3']
 #     print temp_param3['tau0'], temp_param3['tau3']
@@ -112,28 +132,50 @@ def get_chirp_time_region(trigger_params, psd, miss_match, f_lower=30., f_max=20
 #     print dtau0_range, dtau3_range
     return dtau0_range, dtau3_range
 
-def reduced_bank_for_signale_trigger(bank, trigger_param, psd=None, f_lower=30.0, f_max=2048.0,
-                                     f_ref=30., hierarchy_param='chirp_times', miss_match=0.1):
+def reduced_bank_for_signale_trigger(bank, trigger_param, psd, f_lower, f_max,
+                                     f_ref, hierarchy_param, miss_match):
     if hierarchy_param == 'chirp_times':
         if not ('tau0' and 'tau3' in bank.parameters):
 #             print "I am in"
             t0, t3 = pnu.mass1_mass2_to_tau0_tau3(bank.table['mass1'], bank.table['mass2'], f_ref)
             bank.table = bank.table.add_fields([t0, t3], ['tau0', 'tau3'])
-        print "calculating ranges..."
+        # print "calculating ranges..."
         dtau0_range, dtau3_range = get_chirp_time_region(trigger_param, psd, miss_match, f_lower, f_max, f_ref)
+        reqd_idx = []
 
         reqd_idx = abs(bank.table['tau0'] - trigger_param['tau0']) <= 2.0*abs(dtau0_range)
         reqd_idx *= (abs(bank.table['tau3'] - trigger_param['tau3']) <= 2.0*abs(dtau3_range))
         newbank = copy.copy(bank)
         newbank.table = newbank.table[reqd_idx]
 
+        while len(newbank.table) < 4 or len(newbank.table) > 350:
+            if len(newbank.table) < 4:
+                dtau0_range *= 1.5
+                dtau3_range *= 1.5
+                reqd_idx = abs(bank.table['tau0'] - trigger_param['tau0']) <= 2.0*abs(dtau0_range)
+                reqd_idx *= (abs(bank.table['tau3'] - trigger_param['tau3']) <= 2.0*abs(dtau3_range))
+                newbank = copy.copy(bank)
+                newbank.table = newbank.table[reqd_idx]
+            elif len(newbank.table) > 350:
+                dtau0_range /= 2.0
+                dtau3_range /= 2.0
+                reqd_idx = abs(bank.table['tau0'] - trigger_param['tau0']) <= 2.0*abs(dtau0_range)
+                reqd_idx *= (abs(bank.table['tau3'] - trigger_param['tau3']) <= 2.0*abs(dtau3_range))
+                newbank = copy.copy(bank)
+                newbank.table = newbank.table[reqd_idx]
+
+            break
+        # print 'sngl trig bank:', len(newbank.table)
+
         return newbank, reqd_idx
 
 def get_seg_triggers(trigger_file, det, bank, seg_start, seg_end, f_ref=30.0):
 #     print trigger_file
     f = h5py.File(trigger_file)
-    trigger_hashes = f['{0}/template_hash'.format('L1')][...]
-    trigger_end_times = f['{0}/end_time'.format('L1')][...]
+    trig_snr = f['{0}/snr'.format(det)][...]
+    # idx = (trig_snr > 6.0)
+    trigger_hashes = f['{0}/template_hash'.format(det)][...] # [idx]
+    trigger_end_times = f['{0}/end_time'.format(det)][...] # [idx]
     f.close()
     rel_idx = np.where(seg_start <= trigger_end_times) and (trigger_end_times <= seg_end)
     rel_hashes = set(trigger_hashes[rel_idx])
@@ -148,14 +190,16 @@ def reduced_bank_for_segment(fine_bank, coarse_bank, trigger_file, det, seg_star
                              psd=None, f_lower=30.0, f_max=2048.0, f_ref=30.,
                              hierarchy_param='chirp_times', miss_match=0.1):
     seg_trig_par = get_seg_triggers(trigger_file, det, coarse_bank, seg_start, seg_end, f_ref)
+    all_reqd_idx = []
     all_reqd_idx = np.array([False]*len(fine_bank.table['template_hash']))
     for trig_p in seg_trig_par:
+        # print 'trig param:', trig_p
         _, idx = reduced_bank_for_signale_trigger(fine_bank, trig_p, psd, f_lower, f_max,
                                                   f_ref, hierarchy_param, miss_match)
-        print idx
+        # print idx
         all_reqd_idx = np.logical_or(all_reqd_idx, idx)
 
-    print all_reqd_idx
+    # print all_reqd_idx
     newbank = copy.copy(fine_bank)
     newbank.table = newbank.table[all_reqd_idx]
     return newbank

@@ -28,7 +28,7 @@ import pycbc.weave
 import pycbc.inject
 import time
 ##############
-import hierarchical_utils as hl
+from pycbc import hierarchical_utils as hl
 
 tstart = time.time()
 
@@ -280,19 +280,20 @@ with ctx:
     for seg in segments:
         seg /= seg.psd
 
-    logging.info("Read in coarse template bank")
+    # fine bank to actually do matched filter
+    logging.info("Read in fine template bank:{0}".format(opt.fine_bank_file))
+    bank = waveform.FilterBank(opt.fine_bank_file, flen, delta_f,
+                    low_frequency_cutoff=flow, dtype=complex64, phase_order=opt.order,
+                    taper=opt.taper_template, approximant=opt.approximant,
+                    out=template_mem, max_template_length=opt.max_template_length)
+
+    logging.info("Read in coarse template bank{0}".format(opt.bank_file))
     # coarse bank to get trigger parameters
     coarse_bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
                     low_frequency_cutoff=flow, dtype=complex64, phase_order=opt.order,
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
 
-    # fine bank to actually do matched filter
-    logging.info("Read in fine template bank")
-    bank = waveform.FilterBank(opt.fine_bank_file, flen, delta_f,
-                    low_frequency_cutoff=flow, dtype=complex64, phase_order=opt.order,
-                    taper=opt.taper_template, approximant=opt.approximant,
-                    out=template_mem, max_template_length=opt.max_template_length)
 
     ntemplates = len(bank)
     nfilters = 0
@@ -314,10 +315,11 @@ with ctx:
     # bank.
     for s_num, stilde in enumerate(segments):
         # Get new_bank for the segment using triggers corresponding to the current segments
-        # seg_start = stilde.epoch
-        # seg_end = seg_start + 1./stilde.delta_f
-        seg_start, seg_end = 1126260774.6, 1126260774.6 + 2560
-        print seg_start, seg_end
+        seg_start = stilde.epoch
+        # seg_start = stilde.start
+        seg_end = seg_start + 1.0/stilde.delta_f
+        # seg_start, seg_end = 1126260774.6, 1126260774.6 + 2560
+        # print 'seg times', seg_start, seg_end
         # continue
         # To chose parameter space region in template bank for sub-banks, we
         # calculate 2 matches.
@@ -326,10 +328,12 @@ with ctx:
         # segment ends to so that psd and numerical effects can be kept at bay.
         # Dunccan Brown's Thesis: Same as throw-away during matched filter.
         logging.info("Making new bank for segment {0}".format(s_num))
+        new_bank = []
         new_bank = hl.reduced_bank_for_segment(bank, coarse_bank, opt.coarse_trigger_file,
                 det, seg_start, seg_end, psd=None, f_lower=flow, f_max=fmax, f_ref=flow,
                 hierarchy_param=opt.hierarchical_parameter, miss_match=opt.miss_match)
-        print len(new_bank.table)
+        print "lenth of reduced bank", len(new_bank.table)
+        # continue
 
         for t_num in xrange(len(new_bank)):
             tmplt_generated = False
@@ -389,8 +393,8 @@ with ctx:
             # change
             # FIXME: Can give issues as not all segments for one template are
             # considered. May need changes. Keep eye!
-        event_mgr.cluster_template_events("time_index", "snr", cluster_window)
-        event_mgr.finalize_template_events()
+            event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+            event_mgr.finalize_template_events()
 
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
