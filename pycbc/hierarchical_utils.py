@@ -140,7 +140,9 @@ def reduced_bank_for_signale_trigger(bank, trigger_param, psd, f_lower, f_max,
             t0, t3 = pnu.mass1_mass2_to_tau0_tau3(bank.table['mass1'], bank.table['mass2'], f_ref)
             bank.table = bank.table.add_fields([t0, t3], ['tau0', 'tau3'])
         # print "calculating ranges..."
-        dtau0_range, dtau3_range = get_chirp_time_region(trigger_param, psd, miss_match, f_lower, f_max, f_ref)
+        hpsd = copy.deepcopy(psd)
+        hpsd = hpsd.astype(pt.float64)
+        dtau0_range, dtau3_range = get_chirp_time_region(trigger_param, hpsd, miss_match, f_lower, f_max, f_ref)
         reqd_idx = []
 
         reqd_idx = abs(bank.table['tau0'] - trigger_param['tau0']) <= 2.0*abs(dtau0_range)
@@ -173,12 +175,15 @@ def get_seg_triggers(trigger_file, det, bank, seg_start, seg_end, f_ref=30.0):
 #     print trigger_file
     f = h5py.File(trigger_file)
     trig_snr = f['{0}/snr'.format(det)][...]
-    # idx = (trig_snr > 6.0)
-    trigger_hashes = f['{0}/template_hash'.format(det)][...] # [idx]
-    trigger_end_times = f['{0}/end_time'.format(det)][...] # [idx]
+    idx = (trig_snr > 6.0)
+    trigger_hashes = f['{0}/template_hash'.format(det)][...][idx]
+    trigger_end_times = f['{0}/end_time'.format(det)][...][idx]
     f.close()
-    rel_idx = np.where(seg_start <= trigger_end_times) and (trigger_end_times <= seg_end)
+    print seg_start, seg_end
+    rel_idx = np.where(seg_start < trigger_end_times) and (trigger_end_times < seg_end)
     rel_hashes = set(trigger_hashes[rel_idx])
+    print trigger_end_times[rel_idx][:].min(), trigger_end_times[rel_idx][:].max()
+    print "length of the trigger list for seg start-end:", len(rel_hashes), seg_start, seg_end
     trigger_params = bank.table[np.in1d(bank.table['template_hash'], list(rel_hashes), True)]
     if not ('tau0' and 'tau3' in trigger_params):
         t0, t3 = pnu.mass1_mass2_to_tau0_tau3(trigger_params['mass1'], trigger_params['mass2'], f_ref)
@@ -189,9 +194,11 @@ def get_seg_triggers(trigger_file, det, bank, seg_start, seg_end, f_ref=30.0):
 def reduced_bank_for_segment(fine_bank, coarse_bank, trigger_file, det, seg_start, seg_end,
                              psd=None, f_lower=30.0, f_max=2048.0, f_ref=30.,
                              hierarchy_param='chirp_times', miss_match=0.1):
+
     seg_trig_par = get_seg_triggers(trigger_file, det, coarse_bank, seg_start, seg_end, f_ref)
     all_reqd_idx = []
     all_reqd_idx = np.array([False]*len(fine_bank.table['template_hash']))
+
     for trig_p in seg_trig_par:
         # print 'trig param:', trig_p
         _, idx = reduced_bank_for_signale_trigger(fine_bank, trig_p, psd, f_lower, f_max,

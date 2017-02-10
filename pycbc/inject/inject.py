@@ -61,7 +61,7 @@ def legacy_approximant_name(apx):
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order
-    
+
 
 class InjectionSet(object):
 
@@ -112,8 +112,8 @@ class InjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
         inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -134,7 +134,7 @@ class InjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -167,11 +167,11 @@ class InjectionSet(object):
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
-            
+
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)                            
+            injection_parameters.append(inj)
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
@@ -184,7 +184,7 @@ class InjectionSet(object):
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
-       
+
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object as read from
@@ -202,8 +202,8 @@ class InjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -239,12 +239,12 @@ class InjectionSet(object):
                              inj.longitude, inj.latitude, inj.polarization)
 
         return signal
-        
-        
+
+
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.get_time_geocent() for inj in self.table]      
-    
+        return [inj.get_time_geocent() for inj in self.table]
+
 class SGBurstInjectionSet(object):
 
     """Manages sets of sine-Gaussian burst injections: reads injections
@@ -343,7 +343,7 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            strain = wfutils.taper_timeseries(strain, inj.taper)
+            # strain = wfutils.taper_timeseries(strain, inj.taper)
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 

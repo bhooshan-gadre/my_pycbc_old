@@ -27,7 +27,8 @@ utilities.
 """
 
 import logging
-from math import sqrt
+# from math import sqrt
+from numpy import sqrt
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft, IFFT
@@ -1006,6 +1007,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     if psd is not None:
         if isinstance(psd, FrequencySeries):
             if psd.delta_f == stilde.delta_f :
+                psd.data[-1] = psd.data[-2]
                 _qtilde[kmin:kmax] /= psd[kmin:kmax]
             else:
                 raise TypeError("PSD delta_f does not match data")
