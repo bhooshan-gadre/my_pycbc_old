@@ -1086,7 +1086,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     snr, corr, norm = matched_filter_core(template, data, psd=psd,
             low_frequency_cutoff=low_frequency_cutoff,
             high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
-    return snr * norm
+    snr.data *= norm
+    return snr # * norm
 
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
