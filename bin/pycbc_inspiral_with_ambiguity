@@ -76,6 +76,10 @@ parser.add_argument("--cluster-window", type=float, default = -1,
 parser.add_argument("--maximization-interval", type=float, default=0,
                     help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
+##########################################
+parser.add_argument("--bank-chisq-templates", type=int,
+                  help="no of templates to be used for bank-chi-sq", default=4)
+#########################################
 parser.add_argument("--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq")
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
@@ -333,8 +337,8 @@ with ctx:
                 continue
 
             out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-                  bank_chisq.values(template, stilde, stilde.psd, snrv*norm,
-                                    idx+stilde.analyze.start, n=3)
+                  bank_chisq.values(template, stilde*stilde.psd, stilde.psd, snrv*norm,
+                                    idx+stilde.analyze.start, n=opt.bank_chisq_templates)
 
             out_vals['chisq'], out_vals['chisq_dof'] = \
                   power_chisq.values(corr, snrv, norm, stilde.psd,
