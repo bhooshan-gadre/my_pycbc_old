@@ -1088,7 +1088,6 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
             low_frequency_cutoff=low_frequency_cutoff,
             high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
     snr.data *= norm
-<<<<<<< HEAD
     return snr
 
 
@@ -1138,9 +1137,7 @@ def sky_maxed_snr(stilde, hp, hc, psd, flow, fmax=None, hpnorm=None, hcnorm=None
     delta_t = 1.0 / (tlen * stilde.delta_f)
     return TimeSeries(snr, delta_t, stilde._epoch, copy=False)
 
-=======
     return snr # * norm
->>>>>>> 6dfdadbc925fe8996eed04584149e646360ce62a
 
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
