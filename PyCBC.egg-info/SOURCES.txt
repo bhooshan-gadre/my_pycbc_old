@@ -4,6 +4,11 @@ PyCBC.egg-info/SOURCES.txt
 PyCBC.egg-info/dependency_links.txt
 PyCBC.egg-info/requires.txt
 PyCBC.egg-info/top_level.txt
+bin/.hierarchical_inspiral.un~
+bin/.pycbc_inspiral.un~
+bin/.pycbc_make_banksim.un~
+bin/.pycbc_optimal_snr.un~
+bin/hierarchical_inspiral
 bin/pycbc_aligned_bank_cat
 bin/pycbc_aligned_stoch_bank
 bin/pycbc_bank_verification
@@ -22,6 +27,7 @@ bin/pycbc_hdf5_splitbank
 bin/pycbc_inj_cut
 bin/pycbc_inspiral
 bin/pycbc_inspiral_skymax
+bin/pycbc_inspiral_with_ambiguity
 bin/pycbc_make_banksim
 bin/pycbc_make_faithsim
 bin/pycbc_make_html_page
@@ -155,6 +161,7 @@ pycbc/coordinates.py
 pycbc/detector.py
 pycbc/frame.py
 pycbc/future.py
+pycbc/hierarchical_utils.py
 pycbc/libutils.py
 pycbc/opt.py
 pycbc/pnutils.py
@@ -286,6 +293,7 @@ pycbc/types/frequencyseries.py
 pycbc/types/optparse.py
 pycbc/types/timeseries.py
 pycbc/vetoes/__init__.py
+pycbc/vetoes/ambiguity_chi_sq.py
 pycbc/vetoes/autochisq.py
 pycbc/vetoes/bank_chisq.py
 pycbc/vetoes/chisq.py

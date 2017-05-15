@@ -28,11 +28,11 @@ import pycbc.weave
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector precessing gravitational-wave triggers.")
 
-parser.add_argument("-V", "--verbose", action="store_true", 
+parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
-parser.add_argument("--snr-threshold", 
+parser.add_argument("--snr-threshold",
                   help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
@@ -91,13 +91,13 @@ parser.add_argument("--autochi-two-phase", action="store_true",
                          "against both phases of the SNR time-series. "
                          "If not given, only the phase matching the trigger "
                          "will be used.")
-parser.add_argument("--autochi-onesided", action='store', default=None,
+p?????????????arser.add_argument("--autochi-onesided", action='store', default=None,
                     choices=['left','right'],
                     help="Decide whether to calculate auto-chisq using"
-                         "points on both sides of the trigger or only on one"
+                         "points on both sides of the trigger or o??????nly on one"
                          "side. If not given points on both sides will be"
                          "used. If given, with either 'left' or 'right',"
-                         "only points on that side (right = forward in time,"
+                         "only points on that side (right = forward in time,"??????
                          "left = back in time) will be used.")
 parser.add_argument("--autochi-reverse-template", action="store_true",
                     default=False,
@@ -117,18 +117,18 @@ parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     help="If using --autochi-max-valued this value denotes "
                          "the pre-calculated mean value that will be stored "
                          "as the auto-chisq degrees-of-freedom value.")
-parser.add_argument("--downsample-factor", type=int, 
+parser.add_argument("--downsample-factor", type=int,
                     help="Factor that determines the interval between the "
                          "initial SNR sampling. If not set (or 1) no sparse sample "
                          "is created, and the standard full SNR is calculated.", default=1)
-parser.add_argument("--upsample-threshold", type=float, 
+parser.add_argument("--upsample-threshold", type=float,
                     help="The fraction of the SNR threshold to check the sparse SNR sample.")
 parser.add_argument("--upsample-method", choices=["pruned_fft"],
                     help="The method to find the SNR points between the sparse SNR sample.", default='pruned_fft')
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
-                    This is used to identify FULL_DATA jobs for 
-                    compatibility with pipedown post-processing. 
+                    This is used to identify FULL_DATA jobs for
+                    compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
 parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
