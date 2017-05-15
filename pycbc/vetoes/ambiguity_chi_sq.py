@@ -1,13 +1,6 @@
-
-# coding: utf-8
-
-# In[1]:
-
 import numpy as np
 import numpy
 from numpy import linalg as la
-# import pylab as plt
-
 import itertools
 import copy
 import logging
@@ -22,7 +15,17 @@ import pycbc.noise as pn
 from pycbc.fft import fft, ifft, IFFT
 
 
-# In[3]:
+def get_template_list(filters, trigger_template, f_low, n):
+    bank_tau0, bank_tau3 = pnu.mass1_mass2_to_tau0_tau3(filters.table['mass1'],
+                                                    filters.table['mass2'], f_low)
+    trig_tau0, trig_tau3 = pnu.mass1_mass2_to_tau0_tau3(trigger_template.params.mass1,
+                                                        trigger_template.params.mass2, f_low)
+    idx = np.argmin(abs(bank_tau0 - trig_tau0))
+    ids = np.arange(-n, n+1, 1) + idx
+    ids = ids[np.where((ids>=0) & (ids<len(filters.table)) & (ids!=idx))]
+    trig_bank = copy.copy(filters)
+    trig_bank.table = trig_bank.table[ids]
+    return trig_bank
 
 _snr = None
 def inner(vec1, vec2, psd=None,
@@ -40,7 +43,6 @@ def inner(vec1, vec2, psd=None,
         _snr = pt.zeros(N,dtype=pt.complex_same_precision_as(vec1))
         snr, corr, snr_norm = pf.matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
                                                   high_frequency_cutoff, v1_norm, out=_snr)
-        # print snr, corr, snr_norm
     if v2_norm is None:
         v2_norm = pf.sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
 
@@ -48,53 +50,9 @@ def inner(vec1, vec2, psd=None,
 
     return snr
 
-
-def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
-    """ This functions calculates the snr of each bank veto template against
-    the segment
-
-    Parameters
-    ----------
-    filters: list of FrequencySeries
-        The list of bank veto templates filters.
-    stilde: FrequencySeries
-        The current segment of data.
-    psd: FrequencySeries
-    low_frequency_cutoff: float
-
-    Returns
-    -------
-    snr (list): List of snr time series.
-    """
-    snrs = []
-    for i, template in enumerate(filters):
-        snr = inner(template, stilde, psd, low_frequency_cutoff, v2_norm=1.0)
-
-        snrs.append(snr)
-        print "lens of snr and stilde:"
-        print len(snr), len(stilde)
-
-    return snrs
-
-
-def get_template_list(filters, trigger_template, f_low, n):
-    bank_template_tau0, _ = pnu.mass1_mass2_to_tau0_tau3(filters.table['mass1'],
-                                                    filters.table['mass2'], f_low)
-    trigger_template_tau0, _ = pnu.mass1_mass2_to_tau0_tau3(trigger_template.params.mass1,
-                                                        trigger_template.params.mass2, f_low)
-    idx = np.argmin(abs(bank_template_tau0 - trigger_template_tau0))
-    # ids = numpy.arange(-2*n, 2*n+2, 2) + idx
-    ids = np.arange(-n, n+1, 1) + idx
-    ids = ids[np.where((ids>=0) & (ids<len(filters.table)) & (ids!=idx))]
-    trig_bank = copy.copy(filters)
-    trig_bank.table = trig_bank.table[ids]
-    return trig_bank
-
-
-# In[ ]:
-
 class SingleDetAmbiguityChiSq(object):
-    def __init__(self, bank_file, flen, delta_f, f_low, cdtype, time_indices=[0], approximant=None, **kwds):
+    def __init__(self, bank_file, flen, delta_f, f_low, cdtype, time_indices=[0],
+            approximant=None, **kwds):
         if bank_file is not None:
             self.do = True
 
@@ -122,30 +80,24 @@ class SingleDetAmbiguityChiSq(object):
             self._filter_matches_cache = {}
             self._segment_snrs_cache = {}
             self._sigma_cache = {}
-#             self._template_filter_matches_cache = {}
         else:
             self.do = False
 
     def cache_segment_snrs(self, template, stilde, psd):
-        key = (template.params.template_hash, hash(stilde), hash(psd))
+        key = (template.params.template_hash, stilde._epoch, hash(psd))
+        # key = (template.params.template_hash, hash(stilde), hash(psd))
         if key not in self._segment_snrs_cache:
-            mat = inner(template, stilde*psd, psd, self.f_low, v2_norm=1.0)
+
+
+            mat = pf.matched_filter(template, stilde, psd, self.f_low)
             self._segment_snrs_cache[key] = mat
-
-            # print "lens of snr and stilde:"
-            # print len(mat), len(stilde)
-
-        # relevant_filters = self.cache_filters(template, n)
-        # if key not in self._segment_snrs_cache:
-        #     mat = inner(template, stilde*psd, psd, self.f_low, v2_norm=1.0)
-        #     self._segment_snrs_cache[key] = mat
-
         return self._segment_snrs_cache[key]
 
     def cache_filters(self, template, n):
         key = (template.params.template_hash, n)
         if key not in self._relevent_filters:
-            self._relevent_filters[key] = get_template_list(self.filters, template,self.f_low, n)
+            self._relevent_filters[key] = get_template_list(self.filters, template,
+                    self.f_low, n)
 
         return self._relevent_filters[key]
 
@@ -153,7 +105,6 @@ class SingleDetAmbiguityChiSq(object):
         key = (filter1.params.template_hash, filter2.params.template_hash, hash(psd))
         if key not in self._filter_matches_cache:
             mat = inner(filter1, filter2, psd, self.f_low)
-            # print mat[0]
             self._filter_matches_cache[key] = mat
         return self._filter_matches_cache[key]
 
@@ -172,25 +123,14 @@ class SingleDetAmbiguityChiSq(object):
                 h_ij[i, j] = mat.data[0].real
                 h_ij[j, i] = h_ij[i, j]
 
-                # print i, 'H0i:', mat_i_temp.data.real[0]
-                # print 'H0j:', mat_j_temp.data.real[0]
-
-                # print i, 'Hpii:', mat_i_temp.data.imag[0]
-                # print 'H0j:', mat_j_temp.data.real[0]
-                cov[i, j] = h_ij[i, j] - (mat_i_temp.data[0].real*mat_j_temp.data[0].real + mat_i_temp.data[0].imag*mat_j_temp.data[0].imag)
+                cov[i, j] = h_ij[i, j] - (mat_i_temp.data[0].real*mat_j_temp.data[0].real +
+                                          mat_i_temp.data[0].imag*mat_j_temp.data[0].imag)
                 cov[j, i] = cov[i, j]
-            # for i, j in itertools.combinations(range(m), 2):
-            #     mat = self.cache_filter_matches(rel_filters[i], rel_filters[j], psd)
-            #     cov[i, j] = mat.data[0].real # replace with time_indices
-            #     cov[j, i] = cov[i, j]
 
             evals, rot_mat = la.eig(cov)
-            print "cov matrix", cov
-            print '\n egainvals:', evals
 
             self._sigma_cache[key] = cov, evals, rot_mat
 
-        # print 'h_ij:', h_ij
         return self._sigma_cache[key]
 
     def values(self, template, stilde, psd, snr, indices, n):
@@ -213,25 +153,25 @@ class SingleDetAmbiguityChiSq(object):
             for j, idx in enumerate(indices):
                 temp = np.zeros_like(evals)
                 for i, fil in enumerate(rel_filters):
-                    # temp_seg_snr = self.cache_segment_snrs(template, stilde, psd).data[idx]
-                    # print temp_seg_snr
-                    # print len(temp_seg_snr)
-                    # temp_fil_mat = self.cache_filter_matches(template, fil, psd).data[0]
+                    proj =  self.cache_filter_matches(template, fil, psd).data[time_index]
+                    seg_mat = self.cache_segment_snrs(fil, stilde, psd)
+                    temp[i] = seg_mat.data[idx+time_index].real -  proj.real*snr[j].real \
+                            - proj.imag*snr[j].imag
 
-                    # temp[i] = (self.cache_segment_snrs(template, stilde, psd).data[idx+time_index] - \
-                    #         snr[j]*self.cache_filter_matches(template, fil, psd).data[0+time_index]).real
-                    proj =  self.cache_filter_matches(template, fil, psd).data[0]
-                    temp[i] = self.cache_segment_snrs(fil, stilde, psd).data[idx+time_index].real - proj.real*snr[j].real - proj.imag*snr[j].imag
-
-                # print "del_ci", temp
                 temp = np.dot(rot_mat.T, temp)
-                # print "del_ci, prime", temp
                 idx = evals > 0.05
                 chi = (temp[idx]*temp[idx]/evals[idx]).sum()
 
-                print "snr, chi_sq, dof: ", snr[j], chi, len(evals[idx]), '\n'
-                chisq.append(chi) # assuming all eigenvalues are good
-                chisq_dof.append(len(evals))
+                print "snr, chi_sq_per_dof, dof: ", abs(snr[j]), chi/(1.*len(evals[idx])), \
+                        len(evals[idx])#, '\n'
+                print "Min-max evals:", evals[idx].min(), evals[idx].max(), evals[idx].max()/evals[idx].min()
+                print '\n'
+                # if chi/(1.*len(evals[idx])) > 2.0:
+                #     print "printing evalues:"
+                #     print evals[idx]
+                #     print "Min-max evals:", evals[idx].min(), evals[idx].max()
+                chisq.append(chi/(1.*len(evals[idx])))
+                chisq_dof.append(len(evals[idx]))
 
             return chisq, chisq_dof
 
@@ -241,6 +181,3 @@ class SingleDetAmbiguityChiSq(object):
     def save_cav_mat_eval(self, filename):
         np.save(filename, self._sigma_cache)
         logging.info("Wriiten cov matrix.")
-
-
-

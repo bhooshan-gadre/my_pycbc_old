@@ -37,6 +37,7 @@ from pycbc import events
 import pycbc
 import numpy
 
+
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
@@ -1086,7 +1087,56 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     snr, corr, norm = matched_filter_core(template, data, psd=psd,
             low_frequency_cutoff=low_frequency_cutoff,
             high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
-    return snr * norm
+    snr.data *= norm
+    return snr
+
+
+def sky_maxed_snr(stilde, hp, hc, psd, flow, fmax=None, hpnorm=None, hcnorm=None):
+    """TODO: Docstring for my_sky_maxed_snr.
+    stilde: data
+    hp, hc: template polarizations
+    psd:
+    flow:
+    fmax:
+    hpnorm: sigma-square
+    hcnorm: sigma-square
+    returns: Time series with sky-maxed-snr
+
+    Calculate rho+cross, gamma, I+cross, J+cross, delta: a term in the sqrt
+    arXiv:1603.02444v2: eqn 27, 28
+    """
+    # Just to help with pipeline or separate flexibility
+    if not hpnorm:
+        hpnorm = sigmasq(hp, psd, flow, fmax)
+
+    if not hcnorm:
+        hcnorm = sigmasq(hc, psd, flow, fmax)
+
+    # calulating rho+, rho_cross
+    rho_plus = matched_filter(hp, stilde, psd, flow, fmax, hpnorm)
+    rho_plus2 = rho_plus.data*rho_plus.data.conj()
+    rho_cros = matched_filter(hc, stilde, psd, flow, fmax, hcnorm)
+    rho_cros2 = rho_cros.data*rho_cros.data.conj()
+
+    # calculating gamma
+    gamma = (rho_plus.data*rho_cros.data.conj()).real
+
+    # calculating Ipluscross
+    Ipc = overlap(hp, hc, psd, flow, fmax, False)/(hpnorm*hcnorm)**0.5
+
+    # calculating delta
+    delta = ((rho_plus2 - rho_cros2)**2.0 + 4.0*(Ipc*rho_plus2 - gamma)*(Ipc*rho_cros2 - gamma))**0.5
+
+    # calculating lambda and sky-maxed-snr
+    lam = 0.25*(rho_plus2 + rho_cros2 - 2.0*gamma*Ipc + delta)/(1.0 - Ipc**2.0)
+    snr = (2.0*lam)**0.5
+
+    if not fmax:
+        fmax = stilde.sample_frequencies.data[-1]
+    tlen = 2.0*fmax/ stilde.delta_f
+    delta_t = 1.0 / (tlen * stilde.delta_f)
+    return TimeSeries(snr, delta_t, stilde._epoch, copy=False)
+
 
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
@@ -1488,7 +1538,7 @@ class LiveBatchMatchedFilter(object):
 
         return result, veto_info
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
+__all__ = ['match', 'matched_filter', 'sky_maxed_snr','sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
            'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat']

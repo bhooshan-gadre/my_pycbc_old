@@ -14,9 +14,6 @@ import scipy.optimize as so
 import h5py
 import numpy as np
 
-# import hierarchical_utils as hu
-
-
 # In[51]:
 
 def mtotal_eta_to_tau0_tau3(m_total, eta, f_lower):
@@ -210,5 +207,3 @@ def reduced_bank_for_segment(fine_bank, coarse_bank, trigger_file, det, seg_star
     newbank = copy.copy(fine_bank)
     newbank.table = newbank.table[all_reqd_idx]
     return newbank
-
-
